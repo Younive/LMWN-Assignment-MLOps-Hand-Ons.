@@ -63,7 +63,7 @@ Follow these steps precisely to set up and run the application.
 
 The script to populate the database runs on your local machine and requires database credentials. Create a file named `.env` in the root of the project directory.
 
-.env
+**.env**
 * POSTGRES_USER=user
 * POSTGRES_PASSWORD=password
 * POSTGRES_DB=restaurants_db
