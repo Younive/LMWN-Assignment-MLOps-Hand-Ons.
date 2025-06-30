@@ -1,14 +1,10 @@
 # Restaurant Recommendation API
 
----
-
 ## Description
 
 This project provides a high-performance HTTP API server for a restaurant recommendation system, developed as part of the LINE MAN Wongnai Machine Learning Engineer Hands-on assignment. The core of the recommendation logic is powered by a pre-trained Scikit-Learn `NearestNeighbors` model.
 
 The primary goal of this project was to build a stable and scalable service capable of meeting strict performance requirements: serving 30 requests per second with a 90th percentile response time within 100 milliseconds.
-
----
 
 ## Features & Architecture
 
@@ -21,8 +17,6 @@ The final implementation is a robust, production-ready system featuring several 
 * **Database Indexing**: Critical database indexes were added to `users(user_id)` and `restaurants(h3_index)` to ensure millisecond-level query times under load.
 * **Geospatial Pre-filtering**: Implemented an H3-based pre-filtering strategy to dramatically reduce the search space for nearby restaurants.
 * **Memory Optimization**: The request-response cycle was optimized to use lightweight NumPy arrays instead of pandas DataFrames, solving Out of Memory errors under concurrent load.
-
----
 
 ## Prerequisites
 
@@ -61,8 +55,6 @@ The final implementation is a robust, production-ready system featuring several 
         └── main.py         # Main FastAPI application, endpoints, and caching logic
 ```
 
----
-
 ## Setup & Installation
 
 Follow these steps precisely to set up and run the application.
@@ -72,12 +64,12 @@ Follow these steps precisely to set up and run the application.
 The script to populate the database runs on your local machine and requires database credentials. Create a file named `.env` in the root of the project directory.
 
 .env
-POSTGRES_USER=user
-POSTGRES_PASSWORD=password
-POSTGRES_DB=restaurants_db
-POSTGRES_HOST=127.0.0.1
-POSTGRES_PORT=5432
-REDIS_HOST=localhost
+* POSTGRES_USER=user
+* POSTGRES_PASSWORD=password
+* POSTGRES_DB=restaurants_db
+* POSTGRES_HOST=127.0.0.1
+* POSTGRES_PORT=5432
+* REDIS_HOST=localhost
 
 **2. Clean Previous Docker State (Important)**
 
@@ -113,8 +105,6 @@ docker-compose up --build -d
 
 API should now be running and available on `http://localhost:8000`
 
----
-
 ## Usage
 
 ### API Endpoint
@@ -148,8 +138,6 @@ You can test the running API with `curl`:
 curl "http://localhost:8000/recommend/u40099?latitude=13.988&longitude=100.432&size=5&max_dis=20000"
 ```
 
----
-
 ## Performance Testing
 
 The project includes a `perf_test` folder with a Locust script to simulate load and verify the performance requirements.
@@ -176,7 +164,6 @@ locust -f perf_test/locustfile.py
 
 - Click "Start swarming" and observe the statistics to verify the RPS and latency targets.
 
----
-
 ## Key-Learning
 
+---
