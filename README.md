@@ -20,6 +20,7 @@ The final implementation is a robust, production-ready system featuring several 
 * **Database Indexing**: Critical database indexes were added to `users(user_id)` and `restaurants(h3_index)` to ensure millisecond-level query times.
 * **Geospatial Pre-filtering**: Implemented an H3-based pre-filtering strategy to dramatically reduce the search space for nearby restaurants. 
 * **Memory Optimization**: The request-response cycle was optimized to use lightweight NumPy arrays instead of pandas DataFrames, solving Out of Memory errors.
+* **Data Versioning**: The large `user.parquet` data file is tracked using **DVC (Data Version Control)** with a local remote to keep the Git repository lightweight and efficient. The `.dvc` pointer file is committed to Git, while the actual data file is managed outside of the repository
 
 ## Prerequisites
 
