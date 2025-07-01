@@ -1,0 +1,13 @@
+fastapi==0.115.14
+h3==4.3.0
+haversine==2.9.0
+joblib==1.5.1
+locustio==0.999
+numpy==2.3.1
+pandas==2.3.0
+python-dotenv==1.1.1
+redis==6.2.0
+Requests==2.32.4
+scikit_learn==1.7.0
+SQLAlchemy==2.0.41
+tqdm==4.67.1
