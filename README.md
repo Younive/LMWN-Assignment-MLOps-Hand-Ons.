@@ -203,4 +203,16 @@ Summary of those key architectural decisions we made during the optimization pro
 
 * **Reasoning:** Gunicorn achieves concurrency by running multiple, independent worker processes. Each worker handles one request at a time from start to finish. This model is simpler and more stable for this workload because it eliminates the shared resource contention that was causing the async version to deadlock. It provides true parallelism and is the industry-standard for deploying robust Python web applications.
 
+### Additional Technical Note: Single-Request Latency Breakdown
+
+The following measurements were taken from a synchronous diagnostic test before the final database index on `users(user_id)` was added. This test was crucial for identifying the primary performance bottleneck.
+
+**User Database Query:** ~544 ms (0.5438 seconds)
+
+**Model Prediction (kneighbors):** ~70 ms (0.0703 seconds)
+
+**Restaurant Database Query:** ~32 ms (0.0324 seconds)
+
+This data proved that the un-indexed user query was the slowest operation, leading to the decision to add the index, which was the most critical performance optimization in the project.
+
 ---
