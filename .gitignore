@@ -195,6 +195,3 @@ cython_debug/
 
 # ignore venv
 mlops_handon
-
-# ignore data
-data
