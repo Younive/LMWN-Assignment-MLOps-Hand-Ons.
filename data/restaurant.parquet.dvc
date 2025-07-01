@@ -1,0 +1,5 @@
+outs:
+- md5: ddd0cf74236614ad218c05c7a69561a3
+  size: 438836
+  hash: md5
+  path: restaurant.parquet

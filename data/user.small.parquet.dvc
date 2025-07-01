@@ -1,0 +1,5 @@
+outs:
+- md5: 921730506b141ff1140d948ec6ff49b9
+  size: 768005
+  hash: md5
+  path: user.small.parquet
