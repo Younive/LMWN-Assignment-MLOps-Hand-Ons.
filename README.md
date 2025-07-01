@@ -164,8 +164,41 @@ locust -f perf_test/locustfile.py
 
 - Enter the number of users to simulate and a spawn rate.
 
-- Click "Start swarming" and observe the statistics to verify the RPS and latency targets.
+- Click "Start" and observe the statistics to verify the RPS and latency targets.
 
 ## Key-Learning
+
+This project served as a comprehensive, end-to-end exercise in deploying a machine learning model as a high-performance, production-ready service. The journey from a functional prototype to a stable, optimized system revealed several critical engineering lessons:
+
+**1. Architecture First:** An application's concurrency model is fundamental to its stability. Initial attempts using a purely `async` architecture led to complex deadlocks under load. The solution was to pivot to a simpler, more robust multi-process architecture using Gunicorn, which provided stability and true parallelism.
+
+**2. The Database is the First Bottleneck:** The single greatest performance gain came from adding an index to the `users.user_id` column. This simple change reduced a key query's latency by over 90%, proving that **database optimization is a mandatory first step** before attempting code-level optimizations.
+
+**3. Memory is a Critical Resource:** Initial load tests resulted in "Out of Memory" crashes. This was traced to the high memory footprint of using the pandas library within the request-response cycle. By **replacing DataFrames with lightweight NumPy arrays**, the memory pressure was eliminated, allowing the server to remain stable under high concurrency.
+
+**4. The ML Model Is a System Component:** Final analysis showed that the ultimate performance limit was the CPU time of the `model.kneighbors()` inference itself. This highlights that an ML Engineer's job includes considering the inference performance of a model, not just its accuracy, and may require using specialized libraries like Faiss or Annoy to meet production latency targets.
+
+Summary of those key architectural decisions we made during the optimization process.
+
+**1. From pandas DataFrame to Pure NumPy**
+* **Problem:** Under concurrent load, the API server was crashing. The logs showed workers being killed with **"Out of Memory" (OOM)** errors.
+
+* **Solution:** Our investigation found that creating a pandas DataFrame for user features in every request consumed a large amount of memory. We replaced this by converting the data from the database directly into a lightweight **NumPy array**.
+
+* **Reasoning:** NumPy arrays are significantly more memory-efficient for purely numerical data than pandas DataFrames because they don't have the extra overhead of an index and other metadata. This change solved the OOM crashes and made the server stable.
+
+**2. From Raw SQL to SQLAlchemy Table Objects**
+* **Problem:** Building complex SQL queries using Python f-strings was becoming error-prone, especially when trying to pass parameters for the `WHERE ... IN (...)` clauses, which led to multiple database syntax errors.
+
+* **Solution:** We defined our database tables in `database.py` using **SQLAlchemy's `Table` construct**. This allowed us to build queries programmatically (e.g., `select(users_table).where(...)`).
+
+* **Reasoning:** Using SQLAlchemy's objects provides a safer, clearer, and more maintainable way to write queries in Python. It helps prevent syntax errors and abstracts away the raw SQL, making the code more robust.
+
+**3. From async/Thread Pool to Multi-Process Gunicorn**
+* **Problem:** The initial async def version of the API, which used run_in_threadpool to handle blocking calls, suffered from severe freezes and connection timeouts under concurrent load. This was due to complex deadlocks between the asyncio event loop, the thread pool, and the database connection pool.
+
+* **Solution:** We removed all async/await and run_in_threadpool logic and switched the server architecture to Gunicorn with synchronous Uvicorn workers.
+
+* **Reasoning:** Gunicorn achieves concurrency by running multiple, independent worker processes. Each worker handles one request at a time from start to finish. This model is simpler and more stable for this workload because it eliminates the shared resource contention that was causing the async version to deadlock. It provides true parallelism and is the industry-standard for deploying robust Python web applications.
 
 ---
