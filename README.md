@@ -1,5 +1,7 @@
 # Restaurant Recommendation API
 
+> *__Note:__ This project is a comprehensive solution to the take-home assignment for the LINE MAN Wongnai Junior Machine Learning Engineer position.
+
 ## Description
 
 This project provides a high-performance HTTP API server for a restaurant recommendation system. The core of the recommendation logic is powered by a pre-trained Scikit-Learn `NearestNeighbors` model.
