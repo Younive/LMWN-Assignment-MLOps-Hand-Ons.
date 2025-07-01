@@ -2,21 +2,22 @@
 
 ## Description
 
-This project provides a high-performance HTTP API server for a restaurant recommendation system, developed as part of the LINE MAN Wongnai Machine Learning Engineer Hands-on assignment. The core of the recommendation logic is powered by a pre-trained Scikit-Learn `NearestNeighbors` model.
+This project provides a high-performance HTTP API server for a restaurant recommendation system. The core of the recommendation logic is powered by a pre-trained Scikit-Learn `NearestNeighbors` model.
 
 The primary goal of this project was to build a stable and scalable service capable of meeting strict performance requirements: serving 30 requests per second with a 90th percentile response time within 100 milliseconds.
 
 ## Features & Architecture
 
-The final implementation is a robust, production-ready system featuring several key optimizations:
+The final implementation is a robust, production-ready system featuring several key optimizations to ensure stability and performance under concurrent load.
 
-* **Web Server**: A multi-process Gunicorn server managing Uvicorn workers, providing both stability and high concurrency to handle load without deadlocking.
-* **API Framework**: FastAPI for its high performance and automatic data validation.
-* **Database**: PostgreSQL to store user feature data and restaurant location data.
-* **Centralized Caching**: Redis is used as a high-performance, in-memory cache for user features. This provides a shared cache for all Gunicorn worker processes, significantly boosting performance and reducing database load under concurrent requests.
-* **Database Indexing**: Critical database indexes were added to `users(user_id)` and `restaurants(h3_index)` to ensure millisecond-level query times under load.
-* **Geospatial Pre-filtering**: Implemented an H3-based pre-filtering strategy to dramatically reduce the search space for nearby restaurants.
-* **Memory Optimization**: The request-response cycle was optimized to use lightweight NumPy arrays instead of pandas DataFrames, solving Out of Memory errors under concurrent load.
+* **Web Server**: A multi-process **Gunicorn** server managing **Uvicorn** workers, providing both stability and true parallelism to handle high request volumes.
+* **API Framework**: **FastAPI** for its high performance and automatic data validation.
+* **Database**: **PostgreSQL** to store user feature data and restaurant location data.
+* **Cache Pre-warming**: A **Gunicorn `on_starting` server hook** is used to run a one-time, memory-efficient batch process that pre-loads all user data into Redis. This ensures the cache is fully "warm" when the workers start, guaranteeing maximum performance.
+* **Centralized Caching**: **Redis** is used as a high-performance, in-memory cache. It is shared by all Gunicorn worker processes, significantly boosting performance and reducing database load.
+* **Database Indexing**: Critical database indexes were added to `users(user_id)` and `restaurants(h3_index)` to ensure millisecond-level query times.
+* **Geospatial Pre-filtering**: Implemented an H3-based pre-filtering strategy to dramatically reduce the search space for nearby restaurants. 
+* **Memory Optimization**: The request-response cycle was optimized to use lightweight NumPy arrays instead of pandas DataFrames, solving Out of Memory errors.
 
 ## Prerequisites
 
@@ -50,6 +51,7 @@ The final implementation is a robust, production-ready system featuring several 
 └── server/
     ├── Dockerfile          # Instructions to build the API server Docker image
     ├── requirements.txt    # Python dependencies for the server
+    ├── gunicorn_conf.py    # guvicorn config file
     └── app/
         ├── database.py     # SQLAlchemy engine and table metadata setup
         └── main.py         # Main FastAPI application, endpoints, and caching logic
