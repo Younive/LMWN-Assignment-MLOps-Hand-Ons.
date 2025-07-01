@@ -1,8 +1,7 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Query, HTTPException, Depends
-from fastapi.concurrency import run_in_threadpool
-from sqlalchemy import text, select
-from sqlalchemy.orm import Session
+from fastapi import FastAPI, Query, HTTPException
+# from fastapi.concurrency import run_in_threadpool
+from sqlalchemy import select
 import joblib
 import os
 from dotenv import load_dotenv
@@ -50,7 +49,7 @@ async def lifespan(app: FastAPI):
     print("--- Model loaded successfully ---")
     
     yield  # The application runs while the lifespan context is active
-    
+
     # Shutdown: Clean up resources
     print("--- Cleaning up resources ---")
     app.state.model = None
@@ -74,7 +73,7 @@ def read_root():
 # Define the endpoint for recommendations
 @app.get("/recommend/{user_id}")
 @app.post("/recommend/{user_id}")
-async def get_recommendations(
+def get_recommendations(
     user_id: str,
     latitude: float,
     longitude: float,
@@ -82,10 +81,7 @@ async def get_recommendations(
     max_dis: int = Query(5000, gt=0),
     sort_dis: int = Query(0, ge=0, le=1)
 ):
-    if app.state.model is None:
-        raise HTTPException(status_code=503, detail="Model is not loaded yet")
-
-   # --- Lean User Feature Fetching ---
+    # --- Get User Features (with Lazy-Loading Cache) ---
     features = None
     if redis_client:
         cached_features = redis_client.get(user_id)
@@ -94,26 +90,22 @@ async def get_recommendations(
 
     if cached_features:
         print(f"DEBUG: Cache HIT for user_id: {user_id}")
-        # Deserialize the object from Redis
         features = pickle.loads(cached_features)
     else:
         print(f"DEBUG: Cache MISS for user_id: {user_id}")
-        # database query for user_data
         with engine.connect() as connection:
-            query = select(users_table.c.feature_0.label('feature_0'), *[users_table.c[f'feature_{i}'] for i in range(1, 1000)]).where(users_table.c.user_id == user_id)
+            query = select(users_table.c.feature_0, *[users_table.c[f'feature_{i}'] for i in range(1, 1000)]).where(users_table.c.user_id == user_id)
             user_data = connection.execute(query).first()
         
         if not user_data:
             raise HTTPException(status_code=404, detail="User not found")
 
         features = np.array([user_data]).reshape(1, -1)
-
         if redis_client:
-            # Serialize the NumPy array with pickle and set a 1-hour TTL (3600 seconds)
             redis_client.set(user_id, pickle.dumps(features), ex=3600)
-    
+
     # --- Run Model Prediction ---
-    n_neighbors_to_query = 100
+    n_neighbors_to_query = 200
     distances, indices = app.state.model.kneighbors(features, n_neighbors=n_neighbors_to_query)
     model_indices_list = [int(i) for i in indices[0]]
     if not model_indices_list:
@@ -135,37 +127,26 @@ async def get_recommendations(
     if not restaurant_results:
         return {"restaurants": []}
     
+    # --- Final Processing ---
     restaurant_map_by_index = {r['index']: r for r in restaurant_results}
     user_coords = (latitude, longitude)
     results = []
     model_distances = distances[0]
     for i, model_index in enumerate(model_indices_list):
         restaurant_data = restaurant_map_by_index.get(model_index)
-        if not restaurant_data:
-            continue
+        if not restaurant_data: continue
         try:
-            rest_lat = float(restaurant_data['latitude'])
-            rest_lon = float(restaurant_data['longitude'])
-            restaurant_coords = (rest_lat, rest_lon)
-        except (ValueError, TypeError, KeyError):
-            continue
-        
-        # displacement calculation
+            restaurant_coords = (float(restaurant_data['latitude']), float(restaurant_data['longitude']))
+        except (ValueError, TypeError, KeyError): continue
         displacement_meters = haversine(user_coords, restaurant_coords, unit=Unit.METERS)
+        results.append({"id": restaurant_data['restaurant_id'], "difference": model_distances[i], "displacement": round(displacement_meters)})
 
-        # append result
-        results.append({
-            "id": restaurant_data['restaurant_id'],
-            "difference": model_distances[i],
-            "displacement": round(displacement_meters)
-        })
-
-    # Filtering, Sorting, and Sizing logic
-    filtered_results = [r for r in results if r['displacement'] <= max_dis]
-    if sort_dis == 1:
+    # --- Filtering and Sorting ---
+    filtered_results = [r for r in results if r['displacement'] <= int(max_dis)]
+    if int(sort_dis) == 1:
         sorted_results = sorted(filtered_results, key=lambda r: r['displacement'])
     else:
         sorted_results = sorted(filtered_results, key=lambda r: r['difference'])
-    final_results = sorted_results[:size]
-    
+
+    final_results = sorted_results[:int(size)]
     return {"restaurants": final_results}
