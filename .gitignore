@@ -197,4 +197,5 @@ cython_debug/
 mlops_handon
 
 .dvc/config
-client_secret.json
+
+client_secrets.json
