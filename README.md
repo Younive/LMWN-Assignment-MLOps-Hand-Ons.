@@ -1,6 +1,6 @@
 # Restaurant Recommendation API
 
-> *__Note:__ This project is a comprehensive solution to the take-home assignment for the LINE MAN Wongnai Junior Machine Learning Engineer position. (January 2024)
+> *__Note:__ This project is a comprehensive solution to the take-home test assignment for the LINE MAN Wongnai Junior Machine Learning Engineer candidate position. (January 2024)
 
 ## Description
 
